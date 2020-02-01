@@ -4,6 +4,7 @@ import ssl
 import bs4
 from ebooklib import epub
 import requests
+import sys
 
 index_url = "https://m.wuxiaworld.co/The-Grandmaster-Strategist/all.html"
 index_list = []
@@ -94,6 +95,9 @@ def make_epub():
     
  
 if __name__ == '__main__':
+    if len(sys.argv) == 3:
+        index_url = sys.argv[1]
+        book_name = sys.argv[2]
     get_chapter_urls()
     #asyncio.run(main())
     loop = asyncio.get_event_loop()

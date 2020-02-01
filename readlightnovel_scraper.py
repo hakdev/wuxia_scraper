@@ -34,8 +34,8 @@ def get_chapter_content(scraper,indx):
     try:
         res = scraper.get(index_list[indx]['url'])
         soup = bs4.BeautifulSoup(res.text, 'html.parser')    
-        cont = soup.find_all('div', class_='desc')[0]
-        remove_script_tags(cont)
+        cont = soup.find_all('div', class_='desc')[0].find_all('div',class_='hidden')
+        #remove_script_tags(cont)
         return str(cont)
     except Exception as e:
         print(e)
