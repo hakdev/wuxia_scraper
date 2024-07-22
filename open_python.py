@@ -5,7 +5,7 @@ from IPython.core.display import display, HTML
 from bs4 import BeautifulSoup
 display(HTML("<style>.container { width:100% !important; }</style>"))
 from IPython.display import clear_output
-
+import time
 
 class OpenAiAuto():
     chat_url = "https://chat.openai.com/chat"
@@ -20,6 +20,7 @@ class OpenAiAuto():
     _request_log=[]
     _converstaion_id=''
     _data_message_id=''
+    _upload_time=None
     
     def log_requests(self,i):
         try:
@@ -37,6 +38,10 @@ class OpenAiAuto():
                     if len(filt_messages)>0:
                         self._data_message_id=filt_messages[-1]['id']
                         #print('data_message_id',self._data_message_id)
+            if 'uploaded' in i.url and i.method=='POST' and '/backend-api/files' in i.url:
+                self._request_log.append(i)
+                self._upload_time = time.time()
+
         except Exception as e:
             print("Exception occured",i)
             print(e)
@@ -146,6 +151,22 @@ class OpenAiAuto():
     def set_conversation_id(self):
         if 'https://chatgpt.com/c/' in self.page.url and len(self.page.url)==58:
             self._converstaion_id = self.page.url[22:]
+
+    async def upload_file(self,path):
+        upload_event = False 
+        wait_time = 60*3
+        start_upload_time = time.time()
+        async with self.page.expect_file_chooser() as fc_info:
+            await self.page.locator('button.flex.items-center.justify-center.h-8.w-8.rounded-full.text-token-text-primary').click()
+            await self.page.get_by_text("Upload from computer").click()
+        file_chooser = await fc_info.value
+        await file_chooser.set_files(path)
+        while not upload_event:
+            if self._upload_time is not None and self._upload_time>start_upload_time:
+                return
+            asyncio.sleep(10)
+            if time.time() - start_upload_time > wait_time:
+                raise Exception("Exception: Upload event did not occur")
 
         
     async def send_message(self,msg,clear_all=True,show_question=False,show_all=False):
